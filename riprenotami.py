@@ -15,7 +15,11 @@ import logging
 def PCheck(driver, url, type):
   driver.get(url)
   size = len(driver.find_elements(By.XPATH, "//div[text()='Al momento non ci sono date disponibili per il servizio richiesto']"))
-  return size == 0
+  if (size > 0):
+    return 1
+  if "un errore" in driver.page_source or len(driver.find_elements(By.ID, "login-password"))>0:
+    return -1
+  return 0
 
 def PLogin(driver, url, email, password):
   driver.get(url)
@@ -30,6 +34,13 @@ def PLogin(driver, url, email, password):
   #WebDriverWait(driver, 120).until(
   #  EC.presence_of_element_located((By.XPATH, '//table[@id="dataTableServices"')))
   return size > 0
+
+def login(driver, login_url, email, password):
+  driver.delete_all_cookies()
+  logging.warning(f'Logging in as {email}...')
+  while not PLogin(driver, login_url, email, password):
+    driver.delete_all_cookies()
+  logging.warning(f'Logged in as {email}')
 
 def main():
   try:
@@ -51,15 +62,18 @@ def main():
   driver = webdriver.Chrome(options=options, service_log_path=None)
   driver.maximize_window()
 
-  logging.warning(f'Logging in as {params.email}...')
-  while not PLogin(driver, params.login_url, params.email, params.password):
-    driver.delete_all_cookies()
-  logging.warning(f'Logged in as {params.email}')
+  login(driver, params.login_url, params.email, params.password)
 
   done = False
   while True:
     for type, url in check_urls.items():
-      if PCheck(driver, url, type):
+      while True:
+        ret = PCheck(driver, url, type)
+        if ret >= 0:
+          break
+        logging.error("Error checking for {type}, resetting...")
+        login(driver, params.login_url, params.email, params.password)
+      if ret == 0:
         logging.warning(f'Found slot for {type}!')
         if params.pushbullet_token:
           headers = {'Access-Token': params.pushbullet_token, 'Content-Type' : 'application/json'}
