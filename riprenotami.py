@@ -71,7 +71,7 @@ def main():
         ret = PCheck(driver, url, type)
         if ret >= 0:
           break
-        logging.error("Error checking for {type}, resetting...")
+        logging.error(f"Error checking for {type}, resetting...")
         login(driver, params.login_url, params.email, params.password)
       if ret == 0:
         logging.warning(f'Found slot for {type}!')
