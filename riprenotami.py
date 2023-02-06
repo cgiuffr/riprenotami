@@ -14,19 +14,26 @@ import logging
 
 def PCheck(driver, url, type):
   driver.get(url)
+  size = len(driver.find_elements(By.XPATH, '//div[@id="typeofbooking"]'))
+  if size > 0:
+    return 0
   size = len(driver.find_elements(By.XPATH, "//div[text()='Al momento non ci sono date disponibili per il servizio richiesto']"))
-  if (size > 0):
+  if size > 0:
     return 1
-  if "un errore" in driver.page_source or len(driver.find_elements(By.ID, "login-password"))>0:
-    return -1
-  return 0
+  return -1
 
 def PLogin(driver, url, email, password):
   driver.get(url)
-  elem = driver.find_element(By.ID, "login-email")
+  elems = driver.find_elements(By.ID, "login-email")
+  if len(elems) == 0:
+    return False
+  elem = elems[0]
   elem.clear()
   elem.send_keys(email)
-  elem = driver.find_element(By.ID, "login-password")
+  elems = driver.find_elements(By.ID, "login-password")
+  if len(elems) == 0:
+    return False
+  elem = elems[0]
   elem.clear()
   elem.send_keys(password)
   elem.send_keys(Keys.RETURN)
